@@ -1,0 +1,500 @@
+---
+title: "Data Analysis Project"
+author: "Ayesha Abdulllahi"
+date: ""
+output: html_document
+---
+
+</br/>
+
+## ___GENERAL INSTRUCTIONS___
+
+1. Fill in your name in the 'author' section in line 3.
+2. In each code chuck, write the required code to answer the question.
+3. In each answer section, write the answer to the question based on the output from the code you have developed.
+4. Save the document as you proceed through the questions.
+5. Email the completed assignment (Markdown File) to me by 7:20pm on 12/01 at 7:20pm.
+
+Good luck!
+
+
+</br/>
+
+```{r echo = FALSE, warning=FALSE, message = FALSE}
+# LOAD LIBRARIES
+library(mlbench)
+library(ggplot2)
+library(GGally)
+library(corrplot)
+library(expss)
+library(tidyverse)
+library(stringr)
+library(leaflet)
+library(leaflet.extras)
+library(dplyr)
+library(scales)
+
+```
+
+
+</br/>
+
+
+## ___US ARRESTS DATA___
+
+In this section use the "USArrests" data.  This dataset provides state level information on the murder rate, assault rate, rape rate, and urban population.
+
+```{r echo = FALSE}
+# LOAD DATA
+
+load("/cloud/project/USArrests.RDat")
+
+
+```
+
+
+</br/>
+
+
+___1. What is the mean and median murder rate? (1 point)___
+
+```{r}
+
+mean(USArrests$Murder)
+
+median(USArrests$Murder)
+
+
+```
+
+Answer: 
+The mean murder rate is 7.788 and the median murder rate is 7.25.
+
+
+</br/>
+
+
+___2.  Create a dataset that only includes Virginia and surrounding states (West Virginia, Maryland, North Carolina, Tennessee, Kentucky) in descending order by Murder rate. (1 point)___
+```{r}
+VA_others <- USArrests  %>%  filter(State == "Virginia" | State == "West Virginia" | State == "Maryland" | State == "North Carolina" | State == "Tennessee" | State == "Kentucky") %>%
+  
+  select(Murder, State) %>%
+   count(Murder, State) %>%     
+  arrange( desc(Murder) )              
+  
+```
+
+
+</br/>
+
+
+___3. Create a table with the top five states that have the highest reported assault rate.  (1 point)___
+
+```{r}
+five_statesA <- USArrests  %>%  filter(State == "Maryland" | State == "North Carolina" | State == "Florida" | State == "Arizona" | State == "New Mexico") %>%
+  
+  select(State, Assault) %>%
+   count(State, Assault) %>%     
+    arrange( desc(Assault) )      
+
+cro( five_statesA$Assault, five_statesA$State ) %>% tab_sort_desc()
+
+```
+
+
+</br/>
+
+
+___4. Create a bar graph with: (1) state on the X axis, and (2) murder on the Y axis.  Based on the bar graph, which state had the highest rate of murder?  (1 point)___
+
+```{r}
+SYbar <- USArrests %>%           
+  count(State, Murder) %>%     
+  arrange( desc(Murder) )              
+  
+
+ggplot(data = SYbar, aes(x = reorder(State, Murder), y =  Murder)) +  
+  geom_bar(stat="identity") +                  
+  theme(axis.text.x=element_text(angle=75,      
+                                 size = 8,       
+                                 hjust=0.95,     
+                                 vjust=0.95))     
+```
+
+Answer: 
+The state with the highest rate of murder is Georgia.
+
+</br/>
+</br/>
+</br/>
+</br/>
+</br/>
+
+
+## ___CITY CRIME DATA___
+
+In this section use the "crime_data" data.  This dataset provides basic information for crime events that occurred across several cities in 2017-2018.
+
+```{r echo = FALSE}
+# LOAD DATA
+
+load("/cloud/project/crime_data.RDat")
+
+
+```
+
+
+</br/>
+
+
+___5. What city has the highest number of incidents? (1 point)___
+```{r}
+Q5 <- crime_data  %>% 
+  
+  select(city_name, offense_against) %>%
+   count(city_name, offense_against) %>%     
+    arrange( desc(offense_against) )     
+cro(crime_data$city_name, crime_data$offense_against) %>% tab_sort_desc()
+
+```
+
+Answer: 
+New York City has the highest number of incidents!
+
+</br/>
+
+
+___6. Which city has the highest number of 'personal robbery' offenses based on the offense type variable. (1 point)___
+```{r}
+PRhigh <- crime_data %>% filter(offense_type == "personal robbery") %>%    
+  
+  select(city_name, offense_type) %>%  
+  
+  count(city_name, offense_type) %>%   
+  
+  arrange( desc(n)) %>%
+  drop_na()
+
+
+```
+
+Answer: 
+Chicago has the highest number of "personal robbery" offenses.
+
+</br/>
+
+
+___7. What is the most common offense type? (1 point)___
+
+```{r}
+COT <- crime_data %>% 
+  
+  select(offense_type) %>%  
+  count(offense_type) %>%  
+  arrange( desc(n)) %>%
+  drop_na()
+
+
+```
+
+Answer:
+The most common offense type is simple assault.
+
+</br/>
+
+
+___8. What city has the highest rate of the most common offense type identified in question 7? (1 point)___
+
+```{r}
+Q8 <- crime_data %>% filter(offense_type == "simple assault") %>% 
+  
+  select(city_name, offense_type) %>%  
+  count(city_name, offense_type) %>%   
+  arrange( desc(n)) %>%
+  drop_na()
+
+
+```
+
+Answer: 
+The city with the most simple assaults is Chicago.
+
+</br/>
+
+
+___9. What is the most common offense type that is located (location_type) in restaurants? (1 point)___
+
+```{r}
+
+locrest <- crime_data %>% filter (location_type == "restaurant") %>% 
+  
+  
+  select(offense_type, location_type) %>%  
+  count(offense_type, location_type) %>%   
+  arrange( desc(n)) %>%
+  drop_na()
+   
+```
+
+Answer: 
+the most common offense type that is located in restaurants is "theft from building".
+
+</br/>
+
+
+___10. In what location type do 'drug/narcotic violations' most frequently occur? (1 point)___
+
+```{r}
+
+Q10 <- crime_data %>% filter (offense_type == "drug/narcotic violations") %>% 
+  
+  
+  select(offense_type, location_type) %>%  
+  
+  count(offense_type, location_type) %>% 
+  arrange( desc(n)) %>%
+  drop_na()
+
+```
+
+Answer: 
+The location type where 'drug/narcotic violations' most frequently occur is the street.
+
+</br/>
+
+
+___11. What is the most common offense type in Chicago? (1 point)___
+
+```{r}
+coofchi <- crime_data %>% filter (city_name == "Chicago") %>% 
+  
+  
+  select(offense_type, city_name) %>%  
+  count(offense_type, city_name) %>%   
+  arrange( desc(n)) %>%
+  drop_na()
+
+```
+
+Answer: 
+The most common offense type in Chicago is simple assault.
+
+</br/>
+
+___12. Create a crime map of all offenses in the 'crime_data' dataset.  What does that map show you?___
+
+```{r}
+leaflet(crime_data) %>%                               
+  addTiles() %>%                                  
+  addProviderTiles("CartoDB.DarkMatter") %>%      
+  addCircleMarkers(
+                   color = "red",
+                   radius = 1,
+                   stroke = FALSE, 
+                   fillOpacity = 0.5)
+
+```
+
+Answer: 
+The map shows me that crime can be high in two different cities that happen to be in the same state (i.e. California, Texas, and Arizona).
+
+</br/>
+
+
+___13. Create a crime map of personal robbery offenses in Chicago___
+
+```{r}
+MAP_prchi <- crime_data %>% filter(offense_type == "personal robbery" & city_name == "Chicago") 
+
+
+
+leaflet(MAP_prchi) %>%                               
+  addTiles() %>%                                  
+  addProviderTiles("CartoDB.DarkMatter") %>%      
+  addCircleMarkers(
+                   color = "red",
+                   radius = 1,
+                   stroke = FALSE, 
+                   fillOpacity = 0.5)
+
+```
+
+
+</br/>
+
+
+___14. Create a heatmap of drug/narcotic violations in New York___
+
+```{r}
+heatmap <- crime_data %>% 
+  filter(offense_type == "drug/narcotic violations" & city_name == "New York")  
+
+
+leaflet(heatmap) %>%                    
+  addProviderTiles("CartoDB.DarkMatter") %>%  
+  addHeatmap(      
+    blur = 20, 
+    max = 2.0, 
+    radius = 10)
+
+```
+
+
+</br/>
+</br/>
+</br/>
+</br/>
+</br/>
+
+
+## ___FARGO___
+
+In this section use the "FARGO" dataset.  This dataset provides information on crime incidents that occurred in Fargo in 2017.
+
+```{r echo = FALSE}
+# LOAD DATA
+ load("/cloud/project/FARGO.RDat")
+
+
+```
+
+
+</br/>
+
+
+___15. Which month had the most crime? (1 point)___
+
+```{r}
+
+wm <- FARGO %>% 
+  
+  
+  select(Month, Call.Type) %>%  
+  count(Month) %>%   
+  arrange( desc(n)) %>%
+  drop_na()
+
+```
+
+Answer: 
+The month with the most crime is June.
+
+</br/>
+
+
+___16. At what address are the most crimes committed? (1 point)___
+
+
+```{r}
+WA <- FARGO %>% 
+  
+  
+  select(Address, Call.Type) %>%  
+  count(Address) %>%  
+  arrange( desc(n)) %>%
+  drop_na()
+
+
+```
+
+Answer: 
+Most crimes are committed at 200 BLK 4 ST N Fargo, ND 58102.
+
+</br/>
+
+
+___17. What is the most frequent type of crime (based on call type) that happens at the address identified in question 16? (1 point)___
+
+```{r}
+
+Q17 <- FARGO %>% filter(Address == "200 BLK 4 ST N Fargo, ND 58102") %>%
+  
+  
+  select(Address, Call.Type) %>% 
+  count(Address, Call.Type) %>%  
+  arrange( desc(n)) %>%
+  drop_na()
+
+```
+
+Answer: 
+The most frequent type of crime that happens at 200 BLK 4 ST N Fargo, ND 58102 is harassment.
+
+</br/>
+
+
+___18. In March, on what day of the week do most crimes occur? (1 point)___
+
+```{r}
+
+March <- FARGO  %>% filter(Month == "Mar" ) %>%
+
+ group_by(Weekday) %>%   
+
+ select(Month, Weekday, Call.Type) %>%  
+
+ count(Weekday) %>%  
+
+ arrange(desc(n)) %>%     
+
+ drop_na() 
+
+```
+
+Answer: 
+In March, crime is mostly occurring on Fridays. 
+
+</br/>
+
+
+___19. On what day of the week are burglaries most likely to occur? (1 point)___
+
+```{r}
+Burglaries <- FARGO  %>% filter(Call.Type == "Burglary" ) %>%
+
+ group_by(Weekday) %>%   
+
+ select(Weekday, Call.Type) %>%  
+
+ count(Weekday) %>%
+
+ arrange(desc(n)) %>%     
+
+ drop_na() 
+
+
+```
+
+Answer: 
+Burglaries are most likely to occur on Saturdays.
+
+</br/>
+
+
+___20. Between June-August, what day of the week are assaults most likely to occur? (1 point)___
+
+```{r}
+
+
+June_Aug <- FARGO  %>% filter(Month == "June"| Month == "July"| Month ==  "August"| Call.Type == "Assault" ) %>%
+
+ group_by(Weekday) %>%   
+
+ select(Month, Weekday, Call.Type) %>%  
+
+ count(Weekday) %>%  
+
+ arrange(desc(n)) %>%     
+
+ drop_na() 
+```
+
+Answer: 
+Between June-August, assaults are most likely to occur on Saturdays.
+
+
+
+
+
+
+
